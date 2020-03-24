@@ -1,4 +1,4 @@
-import trainer
+from trainer import Trainer
 
 import numpy as np
 
@@ -29,16 +29,16 @@ params2 = {'SelectKBest__k': [1]}
 
 scoring1, scoring2 = 'balanced_accuracy', 'recall'
 
-t1 = trainer.Trainer([m1], [params1], trials=1, scoring=[scoring1])
+t1 = Trainer([m1], [params1], trials=1, scoring=[scoring1])
 results1 = t1.run_models(d, 0)
 
-t2 = trainer.Trainer([m1], [params1], trials=3, scoring=[scoring1])
+t2 = Trainer([m1], [params1], trials=3, scoring=[scoring1])
 results2 = t2.run_models(d, 0)
 
-t3 = trainer.Trainer([m1, m2], [params1, params2], trials=1, scoring=[scoring1, scoring2])
+t3 = Trainer([m1, m2], [params1, params2], trials=1, scoring=[scoring1, scoring2])
 results3 = t3.run_models(d, 0)
 
-t4 = trainer.Trainer([m1, m2], [params1, params2], trials=3, scoring=[scoring1, scoring2],
+t4 = Trainer([m1, m2], [params1, params2], trials=3, scoring=[scoring1, scoring2],
                      cfg_path='./classical_ml/mock_results/config.json')
 results4 = t4.run_models(d, 0)
 
