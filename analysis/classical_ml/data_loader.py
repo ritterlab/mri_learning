@@ -42,12 +42,12 @@ def _traverse_subj(bids_directory, subj_folder):
 
 
 def _get_img_paths(bids_directory, label='label', tsv='participants.tsv', extra_column='gender'):
-    """Given a BIDS folder, retrieve a df with the paths to each image"""
+    """Given a BIDS folder, retrieve a df with the paths to each image""" #TODO extra column
     df = pd.read_csv(os.path.join(bids_directory, tsv), sep='\t')
     return pd.DataFrame({'path': [_traverse_subj(bids_directory, s) for s in df.subject],
                          'subject': df.subject,
                          'label': df[label],
-                         extra_column: df[extra_column]
+                         extra_column: df[extra_column] if extra_column in df.columns else None
                          })
 
 
@@ -126,7 +126,7 @@ class DataLoader:
     def get_transforms(self):
         transformations = []
         if self.cfg['read_mode'] == 'BIDS':
-            transformations.append((lambda paths: np.array([nb_load(path) for path in paths]), {}))
+            transformations.append((self.load_niftii_paths, {}))
         if self.transform:
             transformations.append((self.apply_transform, {}))
         if self.use_atlas:
@@ -164,7 +164,7 @@ class DataLoader:
 
         X = df.path
         y = np.array(df[self.label])
-        self.stratify = df[[self.stratify_cols]]
+        self.stratify = df[self.stratify_cols]
         return {'X': X, 'y': y}
 
     def extract_h5(self):
@@ -184,6 +184,10 @@ class DataLoader:
             X_test, y_test = None, None
 
         return {'X': X_train, 'y': y_train, 'X_test': X_test, 'y_test': y_test}
+
+    @_train_test_apply
+    def load_niftii_paths(self, paths):
+        return np.array([nb_load(path) for path in paths])
 
     @_train_test_apply
     def flatten_images(self, images):
@@ -219,7 +223,8 @@ class DataLoader:
                                                                 shuffle=True,
                                                                 random_state=0)
         else:
-            X_train, X_test, y_train, y_test = dic_data['X'], dic_data['X_test'], dic_data['y'], dic_data['y_test']
+            X_train, y_train = dic_data['X'], dic_data['y']
+            X_test, y_test = dic_data.get('X_test'), dic_data.get('y_test')
 
         return Data(X_train, y_train, X_test, y_test)
 

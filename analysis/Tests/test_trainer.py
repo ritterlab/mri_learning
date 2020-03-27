@@ -13,6 +13,7 @@ class Data:
         self.X_train = X_train
         self.y_train = y_train
 
+#TODO create cfg file in the fly
 
 y = np.array([0, 0, 0, 1, 1, 1, 1, 1, 1, 1])
 X = np.random.random(size=(10, 5))
