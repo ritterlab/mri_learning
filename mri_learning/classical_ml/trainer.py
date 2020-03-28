@@ -6,7 +6,9 @@ import matplotlib.pyplot as plt
 
 from collections import OrderedDict
 from joblib import dump
+from sklearn.dummy import DummyClassifier
 from sklearn.model_selection import KFold, StratifiedKFold, GridSearchCV
+from sklearn.pipeline import Pipeline
 
 
 def _extract_estimator_name(e):
@@ -81,7 +83,7 @@ def _save_results(results, models, results_path, extra_suffix=''):
     dump(dict([(m, r['gs']) for m, r in results.items()]), path)
     # save overall
     path = results_path.split('.')
-    path[-2] = path[(-2)].replace('config', 'analysis') + extra_suffix
+    path[-2] = path[(-2)].replace('config', 'mri_learning') + extra_suffix
     path[-1] = path[(-1)].replace('json', 'joblib')
     path = '.'.join(path)
     with open(results_path) as f:
@@ -92,22 +94,28 @@ def _save_results(results, models, results_path, extra_suffix=''):
 class Trainer:
 
     def __init__(self,
-                 models,
-                 parameter_lst,
+                 models=None,
+                 parameter_lst=None,
                  n_splits=3,
                  scoring=('balanced_accuracy',),
                  retrain_metric='balanced_accuracy',
                  trials=5,
                  cfg_path=None,
+                 verbose=0,
+                 plotting=False,
+                 extra_suffix='',
                  regression=False
                  ):
-        self.models = models
-        self.parameter_lst = parameter_lst
+        self.models = models if models else [Pipeline([('DummyClassifier', DummyClassifier())])]
+        self.parameter_lst = parameter_lst if parameter_lst else [{'DummyClassifier__strategy': ['most_frequent']}]
         self.n_splits = n_splits
         self.scoring = list(scoring) if isinstance(scoring, tuple) else scoring
         self.retrain_metric = retrain_metric
         self.trials = trials
         self.cfg_path = cfg_path
+        self.verbose = verbose
+        self.plotting = plotting
+        self.extra_suffix = extra_suffix
         self.regression = regression
         self.KFoldStrategy = KFold if regression else StratifiedKFold
 
@@ -134,53 +142,48 @@ class Trainer:
         df['trial'] = trial
         return df.set_index('trial'), gs, total_time
 
-    def run_experiments(self, data, model, parameters, verbose, plotting):
+    def run_experiments(self, data, model, parameters):
         """
         Runs multiple independent trials for  CV analysis
         and stores the results and best model of each trial
         :param data: Data object
         :param model: sklearn-like estimator
         :param parameters: list of parameters for `model`. See `GridSearchCV`
-        :param verbose: verbosity level
-        :param plotting: flag to draw a box plot of the aggregated results
         :return: dictionary with the results of every trial
         """
         results = {'df': pd.DataFrame(), 'gs': [], 'times': []}
-        if verbose > 0:
+        if self.verbose > 0:
             print(f"Starting analysis for model {model} \n with parameters {parameters}")
         for i in range(1, self.trials + 1):
-            if verbose > 1:
+            if self.verbose > 1:
                 print(f"iter: {i}")
             df_results, gs, total_time = self.train_grid_search(data, model, parameters, i)
             results['df'] = pd.concat([results['df'], df_results])
             results['gs'].append(gs)
             results['times'].append(total_time)
 
-        if plotting:  # TODO have more control over this part, possible save images
+        if self.plotting:  # TODO have more control over this part, possible save images
             try:
                 _plot_results(results['df'], self.scoring, model)
             except:
                 print("problem while plotting")
-        if verbose > 2:
+        if self.verbose > 2:
             print(results['df'])
         return results
 
-    def run_models(self, data, verbose=0, plotting=False, extra_suffix=''):
+    def run_models(self, data):
         """
         Repeats a multiple iteration cv analysis for multiple models. See `run_experiments`.
         It saves the results as csv tables for the results, and `joblib` objects for the models
         :param data: Data object
-        :param verbose: verbosity level
-        :param plotting: flag for plotting
-        :param extra_suffix: helper to differentiate between analyses
         :return: pd.DataFrame with the information of each trial,
                  nested list of type [[modelA_1, modelA_2], [modelB_1, modelB_2], ...]
         """
         results = {}
         for model, params in zip(self.models, self.parameter_lst):
-            result = self.run_experiments(data, model, params, verbose, plotting)
+            result = self.run_experiments(data, model, params)
             results[_extract_estimator_name(model)] = result
 
         if self.cfg_path:
-            _save_results(results, self.models, self.cfg_path, extra_suffix)
+            _save_results(results, self.models, self.cfg_path, self.extra_suffix)
         return results

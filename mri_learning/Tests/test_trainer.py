@@ -13,7 +13,8 @@ class Data:
         self.X_train = X_train
         self.y_train = y_train
 
-#TODO create cfg file in the fly
+
+# TODO create cfg file in the fly
 
 y = np.array([0, 0, 0, 1, 1, 1, 1, 1, 1, 1])
 X = np.random.random(size=(10, 5))
@@ -30,18 +31,18 @@ params2 = {'SelectKBest__k': [1]}
 
 scoring1, scoring2 = 'balanced_accuracy', 'recall'
 
-t1 = Trainer([m1], [params1], trials=1, scoring=[scoring1])
-results1 = t1.run_models(d, 0)
+t1 = Trainer(models=[m1], parameter_lst=[params1], trials=1, scoring=[scoring1])
+results1 = t1.run_models(d)
 
-t2 = Trainer([m1], [params1], trials=3, scoring=[scoring1])
-results2 = t2.run_models(d, 0)
+t2 = Trainer(models=[m1], parameter_lst=[params1], trials=3, scoring=[scoring1])
+results2 = t2.run_models(d)
 
-t3 = Trainer([m1, m2], [params1, params2], trials=1, scoring=[scoring1, scoring2])
-results3 = t3.run_models(d, 0)
+t3 = Trainer(models=[m1, m2], parameter_lst=[params1, params2], trials=1, scoring=[scoring1, scoring2])
+results3 = t3.run_models(d)
 
-t4 = Trainer([m1, m2], [params1, params2], trials=3, scoring=[scoring1, scoring2],
-                     cfg_path='./classical_ml/mock_results/config.json')
-results4 = t4.run_models(d, 0)
+t4 = Trainer(models=[m1, m2], parameter_lst=[params1, params2], trials=3, scoring=[scoring1, scoring2],
+             cfg_path='./classical_ml/mock_results/config.json')
+results4 = t4.run_models(d)
 
 
 def check_estimators(results, estimators):
@@ -84,4 +85,3 @@ def test_models_trials_metrics_gs_cv():
     check_length(results4, 3)
     mean_metric(results4, scoring1, {e1: 0.5, e2: 1})
     mean_metric(results4, scoring2, {e1: 1, e2: 1})
-
