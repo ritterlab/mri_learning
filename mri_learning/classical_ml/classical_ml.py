@@ -12,7 +12,11 @@ from trainer import Trainer
 
 
 def isinstance_none(obj, data_type):
-    return isinstance_none(obj, data_type) or obj is None
+    return isinstance(obj, data_type) or obj is None
+
+
+def specificity(y_true, y_pred):
+    return sum((y_true == 0) & (y_pred == y_true)) / sum(y_true == 0)
 
 
 def _get_model(model_name):
@@ -49,29 +53,30 @@ class Configuration:
         assert isinstance(self.cfg['training'], dict)
 
         dataset = self.cfg['dataset']
+        
         assert isinstance_none(dataset.get('n_samples'), int)
-        assert isinstance_none(float(dataset.get('test_size')), float)
+        assert isinstance_none(dataset.get('test_size'), int) or isinstance_none(dataset.get('test_size'), float)
         assert isinstance_none(dataset.get('label'), str)
         assert isinstance_none(dataset.get('atlas_strategy'), str)
         assert isinstance_none(dataset.get('use_holdout'), bool)
         assert isinstance_none(dataset.get('use_atlas'), bool)
         assert isinstance_none(dataset.get('minmax_normalize'), bool)
         assert isinstance_none(dataset.get('mean_normalize'), bool)
-        assert isinstance_none(dataset.get('stratify_columns'), list)
+        assert isinstance_none(dataset.get('stratify_cols'), list)
         assert isinstance_none(dataset.get('columns'), list)
         assert isinstance_none(dataset.get('transform'), list)
         assert dataset.get('target_transform') is None or callable(eval(dataset.get('target_transform')))
 
         training = self.cfg['training']
-        assert isinstance_none(training['n_splits'], int)
-        assert isinstance_none(training['trials'], int)
-        assert isinstance_none(training['verbose'], int)
-        assert isinstance_none(training['plotting'], bool)
-        assert isinstance_none(training['regression'], bool)
-        assert isinstance_none(training['retrain_metric'], str)
-        assert isinstance_none(training['scoring'], str) or isinstance_none(training['scoring'], list)
-        assert isinstance_none(training['parameter_lst'], list)
-        assert isinstance_none(training['models'], list)
+        assert isinstance_none(training.get('n_splits'), int)
+        assert isinstance_none(training.get('trials'), int)
+        assert isinstance_none(training.get('verbose'), int)
+        assert isinstance_none(training.get('plotting'), bool)
+        assert isinstance_none(training.get('regression'), bool)
+        assert isinstance_none(training.get('retrain_metric'), str)
+        assert isinstance_none(training.get('scoring'), str) or isinstance_none(training.get('scoring'), list)
+        assert isinstance_none(training.get('parameter_lst'), list)
+        assert isinstance_none(training.get('models'), list)
 
     def check_cfg(self):
         read_mode = self.cfg['read_mode']
@@ -86,8 +91,8 @@ class Configuration:
         dataset = self.cfg['dataset']
         if 'n_splits' in dataset:
             assert dataset['n_splits'] > 0
-        if 'stratify_columns' in dataset and dataset.get('columns') is not None:
-            for sc in dataset['stratify_columns']:
+        if 'stratify_cols' in dataset and dataset.get('columns') is not None:
+            for sc in dataset['stratify_cols']:
                 assert sc in dataset['columns']
         if dataset.get('use_atlas') in (None, True):
             assert 'atlas' in self.cfg['paths']
