@@ -209,7 +209,9 @@ class DataLoader:
     @_train_test_apply
     def apply_transform(self, images):
         """Applies any specified transforms and flattens the image"""
-        return np.array([self.transform(img)for img in images])
+        for t in self.transform:
+            images = np.array([t(img) for img in images])
+        return images
     
     @_train_test_apply
     def apply_target_transform(self, y):

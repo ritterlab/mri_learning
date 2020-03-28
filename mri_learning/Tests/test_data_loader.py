@@ -12,6 +12,10 @@ def transform(x):
     return x + 10
 
 
+def transform1(x):
+    return x * 2
+
+
 def transform_niftii(image):
     return np.flip(image.get_data(), axis=1).copy()
 
@@ -25,7 +29,7 @@ cfg_table = {
         'columns': ['f1', 'f2'],
         'label': 'y',
         'stratify_cols': ['f1', 'y'],
-        'transform': transform,
+        'transform': [transform],
         'n_samples': 8,
         'use_atlas': False,
         'minmax_normalize': False
@@ -41,7 +45,7 @@ cfg_h5 = {
         }
     },
     'dataset': {
-        'transform': transform,
+        'transform': [transform],
         'use_atlas': False,
         'minmax_normalize': False
     }
@@ -55,7 +59,7 @@ cfg_h5_tr = {
         }
     },
     'dataset': {
-        'transform': transform,
+        'transform': [transform, transform1],
         'use_atlas': False,
         'minmax_normalize': False,
         'use_holdout': False
@@ -117,7 +121,7 @@ y_train = np.array([0., 0., 1., 1., 1., 1.])
 y_test = np.array([1., 0.])
 
 expected = Data(X_train, y_train, X_test, y_test)
-expected_tr = Data(X_train, y_train)
+expected_tr = Data(X_train * 2, y_train)
 
 
 def compare_data_obj(d1, d2):
