@@ -1,4 +1,5 @@
 import argparse
+import matplotlib
 import os
 import random
 import seaborn as sns
@@ -11,8 +12,10 @@ from configuration import Configuration
 from data_loader import DataLoader
 from helpers import rename_file, specificity
 from joblib import load as jb_load
-from matplotlib import pyplot as plt
 from scipy.stats import mode
+
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 
 
 def _save_results(df, results_path, extra_suffix=''):
