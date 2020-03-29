@@ -6,6 +6,8 @@ import matplotlib.pyplot as plt
 
 from collections import OrderedDict
 from joblib import dump
+from helpers import rename_file
+from helpers import specificity
 from sklearn.dummy import DummyClassifier
 from sklearn.model_selection import KFold, StratifiedKFold, GridSearchCV
 from sklearn.pipeline import Pipeline
@@ -20,10 +22,10 @@ def _extract_estimator_name(e):
     return name
 
 
-def _plot_results(df, scoring, estimator):
+def _plot_results(df, scorers, estimator):
     # TODO save figure
     df_plot = df[list(filter(lambda col: col.endswith('_mean_test'), df.columns))]
-    df_plot.columns = scoring
+    df_plot.columns = scorers
     plt.figure()
     estimator_name = _extract_estimator_name(estimator)
     plt.title(f"Validation Scores for {estimator_name}")
@@ -31,20 +33,20 @@ def _plot_results(df, scoring, estimator):
     plt.show()
 
 
-def _parse_results(cv_results, scoring):
+def _parse_results(cv_results, scorers):
     """
     :param cv_results: dict of numpy (masked) ndarrays. See GridSearchCV
-    :param scoring: list or dictionary with scoring functions
-    :return: OrderedDict with the results of every scoring function
+    :param scorers: list or dictionary with scorers functions
+    :return: OrderedDict with the results of every scorer function
     """
     dic_results = OrderedDict()
-    if isinstance(scoring, list):
-        scoring_lst = scoring
-    elif isinstance(scoring, dict):
-        scoring_lst = scoring.keys()
+    if isinstance(scorers, list):
+        scorers_lst = scorers
+    elif isinstance(scorers, dict):
+        scorers_lst = scorers.keys()
     else:
-        raise TypeError('scoring must be list or dictionary')
-    for scorer in scoring_lst:
+        raise TypeError('scorers must be list or dictionary')
+    for scorer in scorers_lst:
         # add mean score
         dic = OrderedDict({f"{scorer}_mean_test": cv_results[f"mean_test_{scorer}"].max()})
         best_idx = cv_results[f"rank_test_{scorer}"].argmin()
@@ -60,32 +62,20 @@ def _parse_results(cv_results, scoring):
 def _save_results(results, models, results_path, extra_suffix=''):
     # save full results
     results_path = os.path.abspath(results_path)
-    path = results_path.split('.')
-    path[-2] = path[(-2)].replace('config', 'results_full') + extra_suffix
-    path[-1] = path[(-1)].replace('json', 'xlsx')
-    path = '.'.join(path)
+    path = rename_file(results_path, 'config', 'results_full', 'json', 'xlsx', extra_suffix)
 
     all_results = sorted((m, r['df']) for m, r in results.items())
     df = pd.concat([df for m, df in all_results], axis=1, keys=[m for m, df in all_results])
     df.to_excel(path)
     # save result summary
     means = pd.DataFrame(dict(mean=(df.mean()), std=(df.std())))
-    path = results_path.split('.')
-    path[-2] = path[(-2)].replace('config', 'results_agg') + extra_suffix
-    path[-1] = path[(-1)].replace('json', 'csv')
-    path = '.'.join(path)
+    path = rename_file(results_path, 'config', 'results_agg', 'json', 'csv', extra_suffix)
     means.to_csv(path)
     # save  models
-    path = results_path.split('.')
-    path[-2] = path[(-2)].replace('config', 'best_models') + extra_suffix
-    path[-1] = path[(-1)].replace('json', 'joblib')
-    path = '.'.join(path)
+    path = rename_file(results_path, 'config', 'best_models', 'json', 'joblib', extra_suffix)
     dump(dict([(m, r['gs']) for m, r in results.items()]), path)
     # save overall
-    path = results_path.split('.')
-    path[-2] = path[(-2)].replace('config', 'mri_learning') + extra_suffix
-    path[-1] = path[(-1)].replace('json', 'joblib')
-    path = '.'.join(path)
+    path = rename_file(results_path, 'config', 'mri_learning', 'json', 'joblib', extra_suffix)
     with open(results_path) as f:
         cfg = json.load(f)
     dump(dict(results=results, cfg=cfg), path)
@@ -97,7 +87,7 @@ class Trainer:
                  models=None,
                  parameter_lst=None,
                  n_splits=3,
-                 scoring=('balanced_accuracy',),
+                 scorers=('balanced_accuracy',),
                  retrain_metric='balanced_accuracy',
                  trials=5,
                  cfg_path=None,
@@ -109,7 +99,7 @@ class Trainer:
         self.models = models if models else [Pipeline([('DummyClassifier', DummyClassifier())])]
         self.parameter_lst = parameter_lst if parameter_lst else [{'DummyClassifier__strategy': ['most_frequent']}]
         self.n_splits = n_splits
-        self.scoring = list(scoring) if isinstance(scoring, tuple) else scoring
+        self.scorers = list(scorers) if isinstance(scorers, tuple) else scorers
         self.retrain_metric = retrain_metric
         self.trials = trials
         self.cfg_path = cfg_path
@@ -133,11 +123,11 @@ class Trainer:
         start_time = time.time()
         X, y = data.X_train, data.y_train
         cv = tuple(self.KFoldStrategy(n_splits=self.n_splits, shuffle=True, random_state=trial).split(X, y))
-        gs = GridSearchCV(model, parameters, scoring=self.scoring, cv=cv, n_jobs=-1,
+        gs = GridSearchCV(model, parameters, scoring=self.scorers, cv=cv, n_jobs=-1,
                           refit=self.retrain_metric)
         gs = gs.fit(X, y)
         total_time = (time.time() - start_time) / 60
-        results_data = _parse_results(gs.cv_results_, self.scoring)
+        results_data = _parse_results(gs.cv_results_, self.scorers)
         df = pd.DataFrame(data=results_data, index=(0,))
         df['trial'] = trial
         return df.set_index('trial'), gs, total_time
@@ -164,7 +154,7 @@ class Trainer:
 
         if self.plotting:  # TODO have more control over this part, possible save images
             try:
-                _plot_results(results['df'], self.scoring, model)
+                _plot_results(results['df'], self.scorers, model)
             except:
                 print("problem while plotting")
         if self.verbose > 2:
