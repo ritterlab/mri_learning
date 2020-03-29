@@ -61,7 +61,7 @@ class DataLoader:
                  transform=None,
                  target_transform=map_labels,
                  n_samples=None,
-                 use_atlas=True,
+                 use_atlas=False,
                  atlas_strategy='mean',
                  use_holdout=True,
                  mean_normalize=False,
