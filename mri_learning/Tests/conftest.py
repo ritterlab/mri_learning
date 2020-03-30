@@ -73,7 +73,7 @@ _cfg_bids = {
     'read_mode': 'BIDS',
     'paths': {
         'data': './',
-        'atlas': '../utils/labels_Neuromorphometrics.nii',
+        'atlas': './utils/labels_Neuromorphometrics.nii',
     },
     'dataset': {
         'transform': None,
@@ -154,7 +154,7 @@ t3 = Trainer(models=[m1, m2], parameter_lst=[params1, params2], trials=1, scorer
 results3 = t3.run_models(d)
 
 t4 = Trainer(models=[m1, m2], parameter_lst=[params1, params2], trials=3, scorers=[scoring1, scoring2],
-             cfg_path='./classical_ml/mock_results/config.json')
+             cfg_path='./mri_learning/classical_ml/mock_results/config.json')
 results4 = t4.run_models(d)
 
 
@@ -203,7 +203,7 @@ def expected_tr():
 @pytest.fixture
 def mock_traverse_subj(monkeypatch):
     def mock_get_img_paths(*args, **kwargs):
-        return pd.DataFrame({'path': ['../utils/labels_Neuromorphometrics.nii'],
+        return pd.DataFrame({'path': ['./utils/labels_Neuromorphometrics.nii'],
                              'subject': ['sub-01'],
                              'label': [0],
                              'gender': 1
