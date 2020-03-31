@@ -64,6 +64,7 @@ class DataLoader:
                  use_atlas=False,
                  atlas_strategy='mean',
                  use_holdout=True,
+                 split_seed=0,
                  mean_normalize=False,
                  minmax_normalize=True):
         self.cfg = cfg
@@ -77,6 +78,7 @@ class DataLoader:
         self.use_atlas = use_atlas
         self.atlas_strategy = atlas_strategy
         self.use_holdout = use_holdout
+        self.split_seed = split_seed
         self.mean_normalize = mean_normalize
         self.minmax_normalize = minmax_normalize
 
@@ -223,7 +225,7 @@ class DataLoader:
                                                                 test_size=self.test_size,
                                                                 stratify=self.stratify,
                                                                 shuffle=True,
-                                                                random_state=0)
+                                                                random_state=self.split_seed)
         else:
             X_train, y_train = dic_data['X'], dic_data['y']
             X_test, y_test = dic_data.get('X_test'), dic_data.get('y_test')
