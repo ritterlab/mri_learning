@@ -14,7 +14,8 @@ def _get_model(model_name):
             'LogisticRegression': 'sklearn.linear_model',
             'SVC': 'sklearn.svm',
             'GradientBoostingClassifier': 'sklearn.ensemble',
-            'PCA': 'sklearn.decomposition'
+            'PCA': 'sklearn.decomposition',
+            'SelectKBest': 'sklearn.feature_selection'
         }
         m = getattr(import_module(sklearn_models[model_name]), model_name)
     return m()
