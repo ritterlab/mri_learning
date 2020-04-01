@@ -189,6 +189,8 @@ class DataLoader:
 
     @_train_test_apply
     def load_niftii_paths(self, paths):
+        if self.use_atlas:
+            return np.array([nb_load(path) for path in paths])
         return np.array([nb_load(path).get_data() for path in paths])
 
     @_train_test_apply
