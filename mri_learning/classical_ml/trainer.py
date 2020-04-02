@@ -33,10 +33,11 @@ def _plot_results(df, scorers, estimator):
     plt.show()
 
 
-def _parse_results(cv_results, scorers):
+def _parse_results(cv_results, scorers, train_scores=False):
     """
     :param cv_results: dict of numpy (masked) ndarrays. See GridSearchCV
     :param scorers: list or dictionary with scorers functions
+    :param train_scores: bool: flag that determines if train scores should be added
     :return: OrderedDict with the results of every scorer function
     """
     dic_results = OrderedDict()
@@ -48,8 +49,10 @@ def _parse_results(cv_results, scorers):
         raise TypeError('scorers must be list or dictionary')
     for scorer in scorers_lst:
         # add mean score
-        dic = OrderedDict({f"{scorer}_mean_test": cv_results[f"mean_test_{scorer}"].max()})
         best_idx = cv_results[f"rank_test_{scorer}"].argmin()
+        dic = OrderedDict({f"{scorer}_mean_test": cv_results[f"mean_test_{scorer}"][best_idx]})
+        if train_scores:
+            dic.update({f"{scorer}_mean_train": cv_results[f"mean_train_{scorer}"][best_idx]})
         best_params = cv_results['params'][best_idx]
         # add values of the highest ranked parameters
         for par, val in best_params.items():
@@ -89,6 +92,7 @@ class Trainer:
                  n_splits=3,
                  scorers=('balanced_accuracy',),
                  retrain_metric='balanced_accuracy',
+                 return_train_score=False,
                  trials=5,
                  cfg_path=None,
                  verbose=0,
@@ -101,6 +105,7 @@ class Trainer:
         self.n_splits = n_splits
         self.scorers = list(scorers) if isinstance(scorers, tuple) else scorers
         self.retrain_metric = retrain_metric
+        self.return_train_score = return_train_score
         self.trials = trials
         self.cfg_path = cfg_path
         self.verbose = verbose
@@ -124,10 +129,10 @@ class Trainer:
         X, y = data.X_train, data.y_train
         cv = tuple(self.KFoldStrategy(n_splits=self.n_splits, shuffle=True, random_state=trial).split(X, y))
         gs = GridSearchCV(model, parameters, scoring=self.scorers, cv=cv, n_jobs=-1,
-                          refit=self.retrain_metric)
+                          refit=self.retrain_metric, return_train_score=self.return_train_score)
         gs = gs.fit(X, y)
         total_time = (time.time() - start_time) / 60
-        results_data = _parse_results(gs.cv_results_, self.scorers)
+        results_data = _parse_results(gs.cv_results_, self.scorers, self.return_train_score)
         df = pd.DataFrame(data=results_data, index=(0,))
         df['trial'] = trial
         return df.set_index('trial'), gs, total_time
