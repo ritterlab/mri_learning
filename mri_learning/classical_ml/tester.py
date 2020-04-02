@@ -1,5 +1,5 @@
 import argparse
-import matplotlib
+import matplotlib.pyplot as plt
 import os
 import random
 import seaborn as sns
@@ -14,8 +14,7 @@ from helpers import rename_file, specificity
 from joblib import load as jb_load
 from scipy.stats import mode
 
-matplotlib.use('Agg')
-import matplotlib.pyplot as plt
+plt.switch_backend('agg')
 
 
 def _save_results(df, results_path, extra_suffix=''):
@@ -168,7 +167,10 @@ class Tester:
         plot_df = pd.concat([df[['estimator', s]].rename(columns={s: 'score'}).assign(metric=s)
                              for s in [s.__name__ for s in self.scorers]])
         sns_plot = sns.barplot(x='estimator', y='score', hue='metric', data=plot_df)
-        sns_plot.get_figure().savefig(output_image)
+        try:
+            sns_plot.get_figure().savefig(output_image)
+        except Exception as e:
+            print('Error while plotting')
 
     def score(self, y_test, predictions):
         """
