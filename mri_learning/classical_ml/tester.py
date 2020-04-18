@@ -182,9 +182,9 @@ class Tester:
         all_metrics = []
         estimators = predictions.keys()
         for e in sorted(estimators):
-            all_metrics.append(pd.DataFrame([[s(p, y_test) for s in self.scorers] for p in predictions[e]],
+            all_metrics.append(pd.DataFrame([[s(y_test, p) for s in self.scorers] for p in predictions[e]],
                                             columns=[s.__name__ for s in self.scorers]))
-        df = pd.concat(all_metrics, keys=estimators).reset_index(
+        df = pd.concat(all_metrics, keys=sorted(estimators)).reset_index(
                 ).drop(columns='level_1').rename(columns={'level_0': 'estimator'})
         df_agg = df.groupby(['estimator']).agg(['mean', 'std'])
         if self.plotting:
