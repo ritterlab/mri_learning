@@ -13,9 +13,12 @@ def _get_model(model_name):
         sklearn_models = {
             'LogisticRegression': 'sklearn.linear_model',
             'SVC': 'sklearn.svm',
+            'VotingClassifier': 'sklearn.ensemble',
+            'RandomForestClassifier': 'sklearn.ensemble',
             'GradientBoostingClassifier': 'sklearn.ensemble',
             'PCA': 'sklearn.decomposition',
-            'SelectKBest': 'sklearn.feature_selection'
+            'SelectKBest': 'sklearn.feature_selection',
+            'MinMaxScaler': 'sklearn.preprocessing'
         }
         m = getattr(import_module(sklearn_models[model_name]), model_name)
     return m()
