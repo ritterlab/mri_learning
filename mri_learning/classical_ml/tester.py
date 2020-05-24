@@ -18,10 +18,10 @@ plt.switch_backend('agg')
 
 
 def _save_results(df, results_path, extra_suffix=''):
-    """Save a data frame in an excel file"""
+    """Save a data frame in a csv file"""
     results_path = os.path.abspath(results_path)
-    path = rename_file(results_path, 'config', 'results_holdout', 'json', 'xlsx', extra_suffix)
-    df.to_excel(path)
+    path = rename_file(results_path, 'config', 'results_holdout', 'json', 'csv', extra_suffix)
+    df.to_csv(path)
 
 
 class Tester:

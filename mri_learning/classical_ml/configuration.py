@@ -2,8 +2,16 @@ import json
 
 from helpers import isinstance_none, specificity
 from importlib import import_module
+from joblib import load as jb_load
+
 from sklearn.metrics import make_scorer, SCORERS, balanced_accuracy_score, accuracy_score, roc_auc_score, recall_score
 from sklearn.pipeline import Pipeline
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
+from sklearn.decomposition import PCA
+from sklearn.feature_selection import SelectKBest
+from sklearn.preprocessing import MinMaxScaler
+from sklearn.ensemble import VotingClassifier, RandomForestClassifier, GradientBoostingClassifier
 
 
 def _get_model(model_name):
@@ -13,9 +21,12 @@ def _get_model(model_name):
         sklearn_models = {
             'LogisticRegression': 'sklearn.linear_model',
             'SVC': 'sklearn.svm',
+            'VotingClassifier': 'sklearn.ensemble',
+            'RandomForestClassifier': 'sklearn.ensemble',
             'GradientBoostingClassifier': 'sklearn.ensemble',
             'PCA': 'sklearn.decomposition',
-            'SelectKBest': 'sklearn.feature_selection'
+            'SelectKBest': 'sklearn.feature_selection',
+            'MinMaxScaler': 'sklearn.preprocessing'
         }
         m = getattr(import_module(sklearn_models[model_name]), model_name)
     return m()
@@ -63,8 +74,9 @@ class Configuration:
         assert isinstance_none(training.get('regression'), bool)
         assert isinstance_none(training.get('retrain_metric'), str)
         assert isinstance_none(training.get('scorers'), str) or isinstance_none(training.get('scorers'), list)
+        assert isinstance_none(training.get('models'), str) or isinstance_none(training.get('models'), list)
         assert isinstance_none(training.get('parameter_lst'), list)
-        assert isinstance_none(training.get('models'), list)
+        
 
         holdout = self.cfg.get('holdout')
         if holdout:
@@ -129,8 +141,10 @@ class Configuration:
         self.cfg['training']['scorers'] = scorers_dict
 
         models = self.cfg['training'].get('models')
-        if models:
+        if isinstance(models, list):
             self.cfg['training']['models'] = [Pipeline([(e, _get_model(e)) for e in model]) for model in models]
+        elif isinstance(models, str):
+            self.cfg['training']['models'] = jb_load(models)
 
         self.cfg['training']['cfg_path'] = self.cfg_path
 
