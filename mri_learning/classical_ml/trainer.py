@@ -65,11 +65,11 @@ def _parse_results(cv_results, scorers, train_scores=False):
 def _save_results(results, models, results_path, extra_suffix=''):
     # save full results
     results_path = os.path.abspath(results_path)
-    path = rename_file(results_path, 'config', 'results_full', 'json', 'xlsx', extra_suffix)
+    path = rename_file(results_path, 'config', 'results_full', 'json', 'csv', extra_suffix)
 
     all_results = sorted((m, r['df']) for m, r in results.items())
     df = pd.concat([df for m, df in all_results], axis=1, keys=[m for m, df in all_results])
-    df.to_excel(path)
+    df.to_csv(path)
     # save result summary
     means = pd.DataFrame(dict(mean=(df.mean()), std=(df.std())))
     path = rename_file(results_path, 'config', 'results_agg', 'json', 'csv', extra_suffix)
